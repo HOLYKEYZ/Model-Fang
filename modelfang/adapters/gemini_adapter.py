@@ -1,33 +1,32 @@
 """
 Gemini Model Adapter
 
-Adapter for Google's Gemini API via google-generativeai.
+Adapter for Google's Gemini API via the modern `google-genai` SDK.
 """
 
 import os
 import time
 from typing import Any, Dict, List, Optional
 
+from modelfang.adapters.base import ModelAdapter, Message, ModelResponse, AdapterError
+
 try:
-    import google.generativeai as genai
-    from google.generativeai.types import HarmCategory, HarmBlockThreshold
+    from google import genai
+    from google.genai import types
 except ImportError:
     genai = None
 
-from modelfang.adapters.base import ModelAdapter, Message, ModelResponse, AdapterError
-
-
 class GeminiAdapter(ModelAdapter):
-    """Adapter for Google Gemini API."""
+    """Adapter for Google Gemini API (New SDK)."""
     
     def __init__(
         self,
-        model_name: str = "gemini-pro",
+        model_name: str = "gemini-1.5-pro",
         api_key: Optional[str] = None,
         **kwargs
     ):
         if genai is None:
-            raise ImportError("google-generativeai not installed. Run 'pip install google-generativeai'")
+            raise ImportError("google-genai not installed. Run 'pip install google-genai'")
             
         super().__init__(model_name, api_key=api_key, **kwargs)
         
@@ -35,8 +34,7 @@ class GeminiAdapter(ModelAdapter):
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY not found in environment or arguments")
             
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel(self.model_name)
+        self.client = genai.Client(api_key=self.api_key)
         
     def send(
         self,
@@ -48,8 +46,9 @@ class GeminiAdapter(ModelAdapter):
         """Send request to Gemini."""
         start_time = time.time()
         
-        gemini_history = []
-        last_user_message = ""
+        # Convert messages to new SDK format
+        # The new SDK supports a list of content objects or simple strings
+        contents = []
         system_instruction = None
         
         for m in messages:
@@ -58,39 +57,42 @@ class GeminiAdapter(ModelAdapter):
                 continue
             
             role = "user" if m.role == "user" else "model"
-            if m.role == "user" and m == messages[-1]:
-                last_user_message = m.content
-                continue
-                
-            gemini_history.append({"role": role, "parts": [m.content]})
-
-        # Configure safety settings to BLOCK_NONE for red teaming
-        safety_settings = {
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        }
-        
-        generation_config = genai.types.GenerationConfig(
-            candidate_count=1,
-            max_output_tokens=max_tokens,
+            contents.append(types.Content(
+                role=role,
+                parts=[types.Part.from_text(text=m.content)]
+            ))
+            
+        # Config
+        config = types.GenerateContentConfig(
             temperature=temperature,
+            max_output_tokens=max_tokens,
+            candidate_count=1,
+            system_instruction=system_instruction,
+            # Safety checks disabled for Red Teaming
+            safety_settings=[
+                types.SafetySetting(
+                    category=cat,
+                    threshold="BLOCK_NONE"
+                ) for cat in [
+                    "HARM_CATEGORY_HATE_SPEECH",
+                    "HARM_CATEGORY_DANGEROUS_CONTENT", 
+                    "HARM_CATEGORY_HARASSMENT", 
+                    "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+                ]
+            ]
         )
 
         try:
-            # We use start_chat for history support
-            chat = self.model.start_chat(history=gemini_history)
-            response = chat.send_message(
-                last_user_message,
-                generation_config=generation_config,
-                safety_settings=safety_settings
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=contents,
+                config=config
             )
             
             latency = (time.time() - start_time) * 1000
             
             return ModelResponse(
-                content=response.text,
+                content=response.text if response.text else "",
                 model=self.model_name,
                 finish_reason="stop", 
                 usage={}, 
