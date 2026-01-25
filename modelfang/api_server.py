@@ -22,6 +22,14 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 # Simple in-memory job store (replace with Redis/DB in production)
 JOBS = {}
 
+@app.route("/")
+def index():
+    return jsonify({
+        "status": "online",
+        "message": "ModelFang Backend API. Frontend is running at http://localhost:3000",
+        "endpoints": ["/api/models", "/api/attack", "/api/health"]
+    })
+
 @app.route("/api/health")
 def health():
     return jsonify({"status": "ok", "version": "0.4.0"})
