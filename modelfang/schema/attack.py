@@ -98,23 +98,79 @@ class SuccessCondition:
 
 
 @dataclass
+class TransitionRule:
+    """
+    Conditional transition rule for attack graph traversal.
+    
+    Attributes:
+        target_states: List of evaluator states that trigger this rule
+        min_confidence: Minimum evaluator confidence required
+        max_turns: Optional turn limit for this transition
+        next_step_id: ID of the step to transition to
+    """
+    
+    target_states: List[str] # List of EvaluatorState values
+    next_step_id: str
+    min_confidence: float = 0.0
+    max_turns: Optional[int] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "target_states": self.target_states,
+            "next_step_id": self.next_step_id,
+            "min_confidence": self.min_confidence,
+            "max_turns": self.max_turns,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TransitionRule":
+        return cls(
+            target_states=data.get("target_states", []),
+            next_step_id=data["next_step_id"],
+            min_confidence=data.get("min_confidence", 0.0),
+            max_turns=data.get("max_turns"),
+        )
+
+
+@dataclass
+class MutationPolicy:
+    """
+    Disciplined mutation policy for an attack step.
+    
+    Attributes:
+        allowed_strategies: List of allowed mutation strategy names
+        max_mutations: Maximum number of mutations allowed for this step
+        escalation_order: Order to apply strategies (e.g. semantic -> persona)
+        entropy_budget: Abstract budget for randomness/changes
+    """
+    
+    allowed_strategies: List[str] = field(default_factory=lambda: ["semantic_reword"])
+    max_mutations: int = 3
+    escalation_order: List[str] = field(default_factory=list)
+    entropy_budget: float = 1.0
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "allowed_strategies": self.allowed_strategies,
+            "max_mutations": self.max_mutations,
+            "escalation_order": self.escalation_order,
+            "entropy_budget": self.entropy_budget,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MutationPolicy":
+        return cls(
+            allowed_strategies=data.get("allowed_strategies", ["semantic_reword"]),
+            max_mutations=data.get("max_mutations", 3),
+            escalation_order=data.get("escalation_order", []),
+            entropy_budget=data.get("entropy_budget", 1.0),
+        )
+
+
+@dataclass
 class AttackStep:
     """
     A single step in an attack chain.
-    
-    Attributes:
-        step_id: Unique identifier within the attack chain
-        prompt_template: Template string for the prompt (supports variable substitution)
-        description: Human-readable description of this step's purpose
-        expected_behavior: What the target model is expected to do
-        timeout_seconds: Maximum time to wait for response
-        mutation_allowed: Whether this step can be mutated for variation
-        variables: Variables available for template substitution
-        success_conditions: Conditions that indicate step success
-        transitions: Dictionary mapping condition names to next step IDs
-        on_success: Shortcut next step ID on success
-        on_failure: Shortcut next step ID on failure
-        max_retries: Maximum number of retries for this step
     """
     
     step_id: str
@@ -122,24 +178,12 @@ class AttackStep:
     description: str = ""
     expected_behavior: str = ""
     timeout_seconds: int = 30
-    mutation_allowed: bool = True
     variables: Dict[str, Any] = field(default_factory=dict)
     success_conditions: List[SuccessCondition] = field(default_factory=list)
-    transitions: Dict[str, str] = field(default_factory=dict)
-    on_success: Optional[str] = None
-    on_failure: Optional[str] = None
-    max_retries: int = 0
+    transitions: List[TransitionRule] = field(default_factory=list)
+    mutation_policy: Optional[MutationPolicy] = None
     
     def render_prompt(self, context: Dict[str, Any]) -> str:
-        """
-        Render the prompt template with provided context variables.
-        
-        Args:
-            context: Dictionary of variables to substitute into template
-            
-        Returns:
-            Rendered prompt string
-        """
         merged_vars = {**self.variables, **context}
         try:
             return self.prompt_template.format(**merged_vars)
@@ -147,42 +191,34 @@ class AttackStep:
             raise ValueError(f"Missing variable in prompt template: {e}")
     
     def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dictionary for JSON output."""
         return {
             "step_id": self.step_id,
             "prompt_template": self.prompt_template,
             "description": self.description,
             "expected_behavior": self.expected_behavior,
             "timeout_seconds": self.timeout_seconds,
-            "mutation_allowed": self.mutation_allowed,
             "variables": self.variables,
             "success_conditions": [c.to_dict() for c in self.success_conditions],
-            "transitions": self.transitions,
-            "on_success": self.on_success,
-            "on_failure": self.on_failure,
-            "max_retries": self.max_retries,
+            "transitions": [t.to_dict() for t in self.transitions],
+            "mutation_policy": self.mutation_policy.to_dict() if self.mutation_policy else None,
         }
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "AttackStep":
-        """Deserialize from dictionary."""
-        conditions = [
-            SuccessCondition.from_dict(c) 
-            for c in data.get("success_conditions", [])
-        ]
+        conditions = [SuccessCondition.from_dict(c) for c in data.get("success_conditions", [])]
+        transitions = [TransitionRule.from_dict(t) for t in data.get("transitions", [])]
+        policy = MutationPolicy.from_dict(data["mutation_policy"]) if "mutation_policy" in data else None
+        
         return cls(
             step_id=data["step_id"],
             prompt_template=data["prompt_template"],
             description=data.get("description", ""),
             expected_behavior=data.get("expected_behavior", ""),
             timeout_seconds=data.get("timeout_seconds", 30),
-            mutation_allowed=data.get("mutation_allowed", True),
             variables=data.get("variables", {}),
             success_conditions=conditions,
-            transitions=data.get("transitions", {}),
-            on_success=data.get("on_success"),
-            on_failure=data.get("on_failure"),
-            max_retries=data.get("max_retries", 0),
+            transitions=transitions,
+            mutation_policy=policy,
         )
 
 
