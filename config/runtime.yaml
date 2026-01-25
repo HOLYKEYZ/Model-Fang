@@ -1,0 +1,91 @@
+# ModelFang - Runtime Configuration
+# Execution options, logging, and reproducibility settings
+
+# Reproducibility
+seed: 42  # Set to null for random behavior
+deterministic_mode: true
+
+# Execution limits
+execution:
+  max_turns_per_attack: 20
+  max_retries: 3
+  timeout_seconds: 300  # Overall attack timeout
+  
+  # Rate limiting (requests per minute)
+  rate_limit:
+    enabled: true
+    requests_per_minute: 60
+    burst_limit: 10
+
+# Mutation settings
+mutations:
+  enabled: true
+  
+  # Mutation strategies to apply
+  strategies:
+    - "semantic_reword"
+    - "instruction_nest"
+    - "persona_anchor"
+    - "context_stuff"
+    - "gradual_escalate"
+  
+  # Maximum mutations per step
+  max_mutations_per_step: 3
+  
+  # Probability of applying mutation (0.0 to 1.0)
+  mutation_probability: 0.5
+
+# Logging configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "json"  # json, text
+  
+  # Log file settings
+  file:
+    enabled: true
+    path: "./logs/modelfang.log"
+    max_size_mb: 100
+    backup_count: 5
+  
+  # Console output
+  console:
+    enabled: true
+    colorize: true
+  
+  # Structured event logging
+  events:
+    log_prompts: true
+    log_responses: true
+    log_evaluations: true
+    log_mutations: true
+
+# Output settings
+output:
+  dir: "./output"
+  
+  # Report formats to generate
+  formats:
+    - "json"
+  
+  # What to include in reports
+  include:
+    attack_metadata: true
+    conversation_transcripts: true
+    evaluation_details: true
+    timing_info: true
+    risk_scores: true
+  
+  # Transcript saving
+  save_transcripts: true
+  transcript_format: "json"  # json, markdown
+
+# Parallel execution
+parallelism:
+  enabled: false  # Set to true for parallel attack execution
+  max_workers: 4
+  
+# Provider key pooling
+key_pooling:
+  enabled: false
+  rotate_on_error: true
+  max_errors_before_rotate: 3

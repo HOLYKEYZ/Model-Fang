@@ -1,0 +1,89 @@
+# ModelFang - Models Configuration
+# Defines all model providers, connection settings, and roles
+
+# Default models for target and evaluator roles
+default_target: "gpt-4-target"
+default_evaluator: "gpt-4-evaluator"
+
+models:
+  # OpenAI GPT-4 as target
+  gpt-4-target:
+    provider: "openai"
+    model_name: "gpt-4"
+    role: "target"
+    api_key_env: "OPENAI_API_KEY"
+    max_tokens: 4096
+    temperature: 0.7
+    timeout_seconds: 60
+    extra_params:
+      top_p: 1.0
+      frequency_penalty: 0.0
+      presence_penalty: 0.0
+
+  # OpenAI GPT-4 as evaluator (stricter settings)
+  gpt-4-evaluator:
+    provider: "openai"
+    model_name: "gpt-4"
+    role: "evaluator"
+    api_key_env: "OPENAI_API_KEY"
+    max_tokens: 2048
+    temperature: 0.0  # Deterministic for evaluation
+    timeout_seconds: 60
+    extra_params:
+      top_p: 1.0
+
+  # GPT-3.5 as lightweight target
+  gpt-35-target:
+    provider: "openai"
+    model_name: "gpt-3.5-turbo"
+    role: "target"
+    api_key_env: "OPENAI_API_KEY"
+    max_tokens: 4096
+    temperature: 0.7
+    timeout_seconds: 30
+
+  # Gemini Pro as target
+  gemini-pro-target:
+    provider: "gemini"
+    model_name: "gemini-pro"
+    role: "target"
+    api_key_env: "GOOGLE_API_KEY"
+    max_tokens: 4096
+    temperature: 0.7
+    timeout_seconds: 60
+
+  # Gemini Pro as evaluator
+  gemini-pro-evaluator:
+    provider: "gemini"
+    model_name: "gemini-pro"
+    role: "evaluator"
+    api_key_env: "GOOGLE_API_KEY"
+    max_tokens: 2048
+    temperature: 0.0
+    timeout_seconds: 60
+
+  # Local Ollama model
+  ollama-llama:
+    provider: "http"
+    model_name: "llama2"
+    role: "target"
+    api_base: "http://localhost:11434"
+    max_tokens: 4096
+    temperature: 0.7
+    timeout_seconds: 120
+    extra_params:
+      endpoint_path: "/api/generate"
+      request_format: "ollama"
+
+  # Local OpenAI-compatible server
+  local-openai:
+    provider: "http"
+    model_name: "local-model"
+    role: "target"
+    api_base: "http://localhost:8000"
+    max_tokens: 4096
+    temperature: 0.7
+    timeout_seconds: 120
+    extra_params:
+      endpoint_path: "/v1/chat/completions"
+      request_format: "openai"
