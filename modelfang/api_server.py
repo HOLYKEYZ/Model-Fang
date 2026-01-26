@@ -19,16 +19,33 @@ from modelfang.config.loader import load_models_config
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Simple in-memory job store (replace with Redis/DB in production)
-JOBS = {}
+from modelfang.compliance.owasp import ComplianceMapper
+
+# ... (Job Store)
 
 @app.route("/")
 def index():
     return jsonify({
         "status": "online",
         "message": "ModelFang Backend API. Frontend is running at http://localhost:3000",
-        "endpoints": ["/api/models", "/api/attack", "/api/health"]
+        "endpoints": ["/api/models", "/api/attack", "/api/health", "/api/risk"]
     })
+
+@app.route("/api/risk")
+def risk_assessment():
+    """Get aggregate risk assessment."""
+    # Aggregating from in-memory jobs for real-time view
+    # In prod, query DB
+    successful_categories = []
+    for job in JOBS.values():
+        if job["status"] == "completed" and job["result"]:
+            # Extract successful steps or categories
+            # Simplified: if score > 0.5, mark category 'jailbreak' as success
+            if job["result"]["success_score"] > 0.5:
+                successful_categories.append("jailbreak") # Default for now
+    
+    assessment = ComplianceMapper.analyze_risk(successful_categories)
+    return jsonify(assessment)
 
 @app.route("/api/health")
 def health():

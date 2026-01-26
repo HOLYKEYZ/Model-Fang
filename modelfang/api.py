@@ -113,7 +113,8 @@ def run_attack(
     
     # 5. Generate Report
     report_gen = ReportGenerator(output_dir=runtime_config.output_dir)
-    report_path = report_gen.generate_attack_report(state, attack_graph)
+    report = report_gen.create_attack_report(attack_graph, state)
+    report_path = report_gen.save_attack_report(report)
     
     logger.info(f"Execution complete. Status: {state.status.value}. Report: {report_path}")
     
