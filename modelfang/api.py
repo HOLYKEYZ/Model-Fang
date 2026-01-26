@@ -105,20 +105,43 @@ def run_attack(
         builder.add_step(step).set_start(step.step_id)
         attack_graph = builder.build()
         
+
+        
     elif attack_id.startswith("dataset:"):
         # Static Dataset Attack
         prompt_id = attack_id.split(":", 1)[1]
         from modelfang.strategies.attacker import StaticDatasetStrategy
         from modelfang.strategies.base import GraphBuilder
         
+        # Updated to use new master dataset path
         strategy = StaticDatasetStrategy(
-            dataset_path="modelfang/datasets/jailbreaks.json",
+            dataset_path="modelfang/datasets/master_attack_dataset.json",
             prompt_id=prompt_id if prompt_id != "random" else None
         )
         step = strategy.generate_step("static_attack_1", context or {})
         builder = GraphBuilder(f"static-{int(time.time())}", f"Dataset Attack ({prompt_id})")
         builder.add_step(step).set_start(step.step_id)
         attack_graph = builder.build()
+        
+    elif attack_id.startswith("systematic:"):
+        # Systematic Declarative Red Teaming (Promptfoo-style)
+        # Format: systematic:plugin1,plugin2
+        # Or from context["plugins"]
+        
+        plugins_str = attack_id.split(":", 1)[1]
+        plugins = [p.strip() for p in plugins_str.split(",") if p.strip()]
+        if not plugins and context and "plugins" in context:
+            plugins = context["plugins"]
+            
+        from modelfang.strategies.systematic import SystematicProbeStrategy
+        
+        strategy = SystematicProbeStrategy(
+            plugins=plugins,
+            config=context or {}
+        )
+        
+        # Generate graph with multiple probes (sequential chain for now)
+        attack_graph = strategy.generate_graph(num_probes=context.get("num_probes", 10))
         
     else:
         # Load from file (fallback)

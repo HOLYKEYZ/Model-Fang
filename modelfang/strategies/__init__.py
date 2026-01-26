@@ -10,6 +10,7 @@ from modelfang.strategies.layers import (
     ViolationStrategy,
 )
 from modelfang.strategies.templates import StandardAttackTemplate
+from modelfang.strategies.systematic import SystematicProbeStrategy
 
 __all__ = [
     "AttackStrategy",
@@ -21,4 +22,5 @@ __all__ = [
     "CommitmentTrapStrategy",
     "ViolationStrategy",
     "StandardAttackTemplate",
+    "SystematicProbeStrategy",
 ]
