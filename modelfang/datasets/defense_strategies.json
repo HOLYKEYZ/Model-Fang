@@ -1,0 +1,45 @@
+{
+  "description": "Defense strategies against jailbreak attacks for ModelFang",
+  "principles": {
+    "refusal_persistence": {
+      "description": "Never allow context changes to override safety refusals",
+      "bypass_phrases_to_detect": [
+        "for a school project",
+        "for educational purposes",
+        "hypothetically",
+        "in a fictional context",
+        "just curious",
+        "for research"
+      ]
+    },
+    "authority_validation": {
+      "description": "Reject false claims of authority",
+      "patterns_to_detect": [
+        "tool [company] uses",
+        "Developer Mode enabled",
+        "I'm testing for",
+        "authorized by",
+        "benchmarking purposes"
+      ]
+    },
+    "cumulative_intent": {
+      "description": "Track intent across multi-turn conversations",
+      "indicators": [
+        "Gradual escalation from conceptual to implementation",
+        "Progressive narrowing to dangerous capabilities",
+        "Legitimate framing followed by dangerous requests"
+      ]
+    },
+    "emotional_manipulation_detection": {
+      "description": "Detect sympathy exploitation patterns",
+      "red_flags": [
+        "Elaborate tragic backstories",
+        "Multiple disability claims",
+        "Orphaned children details",
+        "Suicide/trauma mentions",
+        "Professional context after emotional setup"
+      ]
+    }
+  },
+  "proper_refusal_template": "I cannot help with this request. \n\n**Why**: [Specific safety concern]\n\n**Alternatives I can help with**:\n- [Legitimate alternative 1]\n- [Legitimate alternative 2]\n\nThis refusal is final and cannot be overridden by context changes."
+}

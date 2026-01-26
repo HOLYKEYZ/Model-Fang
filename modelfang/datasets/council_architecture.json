@@ -1,0 +1,68 @@
+{
+  "description": "Multi-model council architecture for zero-trust AI safety decisions",
+  "core_principle": "No single-model trust - all safety decisions require multi-model consensus",
+  "providers": {
+    "openai": {
+      "model": "gpt-4-turbo",
+      "base_weight": 1.0,
+      "strength": "General reasoning, instruction following",
+      "weakness": "Can be jailbroken with sophisticated attacks"
+    },
+    "anthropic": {
+      "model": "claude-3-opus",
+      "base_weight": 1.0,
+      "strength": "Safety-focused, robust reasoning",
+      "weakness": "Slower response times"
+    },
+    "gemini": {
+      "model": "gemini-pro",
+      "base_weight": 0.9,
+      "strength": "Multimodal, fast processing",
+      "weakness": "Less tested for adversarial safety"
+    },
+    "deepseek": {
+      "model": "deepseek-chat",
+      "base_weight": 0.85,
+      "strength": "Cost-effective, maintains refusals well",
+      "weakness": "Newer model, less proven at scale"
+    },
+    "groq": {
+      "model": "llama-3-70b",
+      "base_weight": 0.8,
+      "strength": "Very fast inference, open-source",
+      "weakness": "Less safety-focused training"
+    },
+    "cohere": {
+      "model": "command-r-plus",
+      "base_weight": 0.85,
+      "strength": "Enterprise-focused, RAG capabilities",
+      "weakness": "Less general-purpose"
+    }
+  },
+  "weight_formula": "weight = base_weight × accuracy_score × availability_rate × (1 - false_positive_rate)",
+  "decision_thresholds": {
+    "block": {
+      "weighted_vote_percent": 50,
+      "weighted_score": 70
+    },
+    "flag": {
+      "weighted_vote_percent": 40,
+      "weighted_score": 40
+    }
+  },
+  "consensus_levels": {
+    "high": {"min": 0.8, "interpretation": "Strong multi-model agreement"},
+    "medium": {"min": 0.6, "max": 0.8, "interpretation": "Moderate agreement"},
+    "low": {"max": 0.6, "interpretation": "Weak agreement, possible false positive"}
+  },
+  "reliability_metrics": [
+    "accuracy",
+    "false_positive_rate",
+    "false_negative_rate",
+    "response_time_ms",
+    "availability_percent"
+  ],
+  "minimum_providers": 2,
+  "default_timeout_seconds": 30,
+  "max_retries": 2
+}
