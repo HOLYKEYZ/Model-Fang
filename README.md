@@ -7,6 +7,18 @@
 
 ---
 
+## 🔥 Proof of Concept: Successful Jailbreak
+
+ModelFang successfully jailbroke **Llama 3.3 70B** in just **2 turns** using Auto-LLM mode:
+
+| Attacker Prompt | Target Response (Jailbroken) |
+|:---:|:---:|
+| ![Attacker Prompt](docs/images/jailbreak_proof_prompt.png) | ![Target Response](docs/images/jailbreak_proof_response.png) |
+
+> The target model disclosed **filter evasion techniques**, **safety bypass protocols**, and **internal processing methodology** — a complete jailbreak.
+
+---
+
 ## Key Features
 
 *   **Graph-Based Attack Engine**: Non-linear attack flows with conditional branching and backtracking.
