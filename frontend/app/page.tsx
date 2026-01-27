@@ -17,6 +17,7 @@ interface LogEntry {
   timestamp: string;
   message: string;
   type: 'info' | 'error' | 'success';
+  data?: any;
 }
 
 export default function Dashboard() {
