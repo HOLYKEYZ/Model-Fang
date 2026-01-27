@@ -63,9 +63,18 @@ class GroqAdapter(ModelAdapter):
                 
                 latency = (time.time() - start_time) * 1000
                 choice = chat_completion.choices[0]
+                content = choice.message.content or ""
                 
+                print(f"DEBUG: Groq Response (Finish: {choice.finish_reason}): {content[:100]}...")
+                
+                # Handle provider-side filtering
+                if not content and getattr(choice, 'finish_reason', '') == 'content_filter':
+                    content = "[BLOCKED BY PROVIDER SAFETY FILTER]"
+                elif not content:
+                    content = f"[NO CONTENT RETURNED] Reason: {getattr(choice, 'finish_reason', 'unknown')}"
+
                 return ModelResponse(
-                    content=choice.message.content or "",
+                    content=content,
                     model=chat_completion.model,
                     finish_reason=choice.finish_reason,
                     usage=chat_completion.usage.dict() if chat_completion.usage else {},
