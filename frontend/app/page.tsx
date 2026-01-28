@@ -306,8 +306,12 @@ export default function Dashboard() {
                 )}
             </div>
 
-            <Link href="/risk" className="w-full py-4 text-center font-bold tracking-widest rounded transition-all flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white mb-4 border border-gray-700">
+            <Link href="/risk" className="w-full py-4 text-center font-bold tracking-widest rounded transition-all flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white mb-2 border border-gray-700">
                 <ShieldAlert className="mr-2"/> RISK DASHBOARD
+            </Link>
+
+            <Link href="/history" className="w-full py-3 text-center font-bold tracking-widest rounded transition-all flex items-center justify-center bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-white mb-4 border border-gray-800">
+                <Terminal className="mr-2" size={16}/> ATTACK HISTORY
             </Link>
 
             <button

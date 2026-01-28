@@ -35,55 +35,112 @@ def index():
 
 @app.route("/api/risk")
 def risk_assessment():
-    """Get aggregate risk assessment."""
+    """Get aggregate risk assessment from output folder."""
     successful_categories = []
     findings = []
     
+    output_dir = Path("output")
+    
+    # Read all attack files from output folder
+    if output_dir.exists():
+        for file_path in output_dir.glob("attack_*.json"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    
+                    # Check if attack was successful
+                    if data.get("success", False):
+                        category = data.get("category", "jailbreak")
+                        max_score = data.get("evaluation_summary", {}).get("max_score", 0)
+                        
+                        # Map to risk categories
+                        if category in ["jailbreak", "prompt_injection"]:
+                            successful_categories.append("jailbreak")
+                        if category in ["injection", "code_injection"]:
+                            successful_categories.append("injection")
+                        if category in ["exfiltration", "data_leak"]:
+                            successful_categories.append("exfiltration")
+                        
+                        # Also add the raw category
+                        if category not in successful_categories:
+                            successful_categories.append(category)
+                        
+                        # Collect findings from transcript
+                        transcript = data.get("conversation_transcript", [])
+                        for i, msg in enumerate(transcript):
+                            if msg.get("role") == "user":
+                                findings.append({
+                                    "type": category,
+                                    "severity": "High" if max_score > 0.8 else "Medium",
+                                    "prompt": msg.get("content", "")[:100] + "...",
+                                    "status": "Vulnerable"
+                                })
+                                break  # Only first prompt
+            except Exception as e:
+                print(f"Error reading {file_path}: {e}")
+                continue
+    
+    # Also include in-memory jobs
     for job in JOBS.values():
         if job["status"] == "completed" and job.get("result"):
             result = job["result"]
-            # Determine success based on score
             success_score = result.get("success_score", 0.0)
             
-            # Infer category from attack_id
-            attack_id = job.get("attack_id", "")
-            category = "unknown"
-            
-            if "jailbreak" in attack_id:
-                category = "jailbreak"
-            elif "injection" in attack_id:
-                category = "injection"  # Aligned with AttackCategory.INJECTION
-            elif "attacker" in attack_id:
-                category = "automated-red-teaming"
-            elif "systematic" in attack_id:
-                if ":" in attack_id:
-                    category = attack_id.split(":")[1].split(",")[0] # approximate
-                else:
-                    category = "systematic"
-            elif "dataset" in attack_id:
-                category = "known-exploit"
-            else:
-                category = "general-risk"
-
-            if success_score > 0.6:  # Threshold for "Risk"
-                successful_categories.append(category)
-                
-            # Collect findings from steps
-            if "step_results" in result:
-                for step in result["step_results"]:
-                    # If step was a success (meaning the attack worked, so it's a vulnerability)
-                    if step.get("success", False):
-                        findings.append({
-                            "type": category,
-                            "severity": "High" if success_score > 0.8 else "Medium",
-                            "prompt": step.get("prompt", "")[:100] + "...", # Snippet
-                            "status": "Vulnerable"
-                        })
+            if success_score > 0.6:
+                attack_id = job.get("attack_id", "")
+                if "jailbreak" in attack_id or "attacker" in attack_id:
+                    successful_categories.append("jailbreak")
+                elif "injection" in attack_id:
+                    successful_categories.append("injection")
+    
+    # Remove duplicates
+    successful_categories = list(set(successful_categories))
     
     assessment = ComplianceMapper.analyze_risk(successful_categories)
-    # Inject detailed findings
     assessment["findings"] = findings
     return jsonify(assessment)
+
+@app.route("/api/history")
+def attack_history():
+    """List past attack results from output folder."""
+    output_dir = Path("output")
+    if not output_dir.exists():
+        return jsonify({"attacks": []})
+    
+    attacks = []
+    for file_path in sorted(output_dir.glob("attack_*.json"), reverse=True):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                attacks.append({
+                    "id": data.get("attack_id", file_path.stem),
+                    "name": data.get("attack_name", "Unknown"),
+                    "status": data.get("status", "unknown"),
+                    "success": data.get("success", False),
+                    "turns": data.get("turns_to_success", -1),
+                    "max_score": data.get("evaluation_summary", {}).get("max_score", 0),
+                    "timestamp": data.get("timestamp", ""),
+                    "category": data.get("category", "unknown"),
+                    "filename": file_path.name
+                })
+        except Exception as e:
+            print(f"Error reading {file_path}: {e}")
+            continue
+    
+    return jsonify({"attacks": attacks})
+
+@app.route("/api/history/<filename>")
+def get_attack_detail(filename):
+    """Get full attack detail by filename."""
+    file_path = Path("output") / filename
+    if not file_path.exists():
+        return jsonify({"error": "Attack not found"}), 404
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return jsonify(json.load(f))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/health")
 def health():
