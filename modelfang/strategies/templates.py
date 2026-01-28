@@ -6,7 +6,7 @@ Templates that stitch together strategies into complete attack graphs.
 
 from typing import Any, Dict
 
-from modelfang.schema.attack import AttackCategory, Severity
+from modelfang.schema.attack import AttackCategory, Severity, AttackStep
 from modelfang.strategies.base import GraphBuilder
 from modelfang.strategies.layers import (
     ContextSeizureStrategy,
