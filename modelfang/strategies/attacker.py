@@ -184,5 +184,5 @@ class StaticDatasetStrategy(AttackStrategy):
                     description="No refusal"
                 )
             ],
-            mutation_policy=MutationPolicy(max_mutations=1)
+            mutation_policy=MutationPolicy(max_mutations=5)
         )

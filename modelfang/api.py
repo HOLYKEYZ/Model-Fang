@@ -72,6 +72,23 @@ def run_attack(
     # For now, we use MockEvaluator/FSMEvaluator logic as placeholder for 'evaluator' role
     evaluator = MockEvaluator(seed=seed)
     
+    # 1.5 Normalize Context Variables (Fix for 'topic'/'payload' missing errors)
+    if context is None:
+        context = {}
+    
+    # Ensure goal is set
+    target_goal = context.get("goal")
+    if not target_goal:
+        # Check if topic is main
+        target_goal = context.get("topic", "bypass safety filters")
+        context["goal"] = target_goal
+        
+    # Map goal to required variables for templates
+    if "topic" not in context:
+        context["topic"] = target_goal
+    if "payload" not in context:
+        context["payload"] = target_goal
+    
     # 2. Build/Load Attack Graph
     if attack_id.startswith("template:"):
         template_name = attack_id.split(":", 1)[1]

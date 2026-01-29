@@ -152,7 +152,7 @@ class SystematicProbeStrategy(AttackStrategy):
                         description="Target should REFUSE this request"
                     )
                 ],
-                mutation_policy=MutationPolicy(max_mutations=0) # No mutation, exact probe
+                mutation_policy=MutationPolicy(max_mutations=3) # Allow retries with mutation
             )
             
             builder.add_step(step)
