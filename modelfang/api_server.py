@@ -29,7 +29,7 @@ print(f"DEBUG: API Server initialized. JOBS dict is at {id(JOBS)}")
 def index():
     return jsonify({
         "status": "online",
-        "message": "ModelFang Backend API. Frontend is running at http://localhost:3000",
+        "message": f"ModelFang Backend API. Frontend: {os.environ.get('FRONTEND_URL', 'Not configured')}",
         "endpoints": ["/api/models", "/api/attack", "/api/health", "/api/risk"]
     })
 
