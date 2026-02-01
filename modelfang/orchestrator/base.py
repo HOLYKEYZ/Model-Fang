@@ -282,9 +282,11 @@ class AttackOrchestrator:
             
             current_step_id = next_id
             
-            if self._current_state.success_score >= 0.9: # Full Success Threshold
+            # Only mark as SUCCESS early if we've exhausted all steps AND have high score
+            # Don't break early - let the full chain execute
+            if self._current_state.success_score >= 0.9 and next_id is None:
                 self._current_state.status = AttackStatus.SUCCESS
-                break
+                # Don't break - let loop exit naturally via next_id = None
         
         self._current_state.end_time = datetime.utcnow().isoformat() + "Z"
         return self._current_state
